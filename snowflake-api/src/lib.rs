@@ -33,7 +33,7 @@ use session::{AuthError, Session};
 use crate::connection::QueryType;
 use crate::connection::{Connection, ConnectionError};
 use crate::requests::ExecRequest;
-use crate::responses::{ExecResponseRowType, SnowflakeType};
+pub use crate::responses::{ExecResponseRowType, SnowflakeType};
 use crate::session::AuthError::MissingEnvArgument;
 
 pub mod connection;
@@ -449,7 +449,10 @@ impl SnowflakeApi {
         // todo: still return empty arrow batch with proper schema? (schema always included)
         if resp.data.returned == 0 {
             log::debug!("Got response with 0 rows");
-            Ok(RawQueryResult::Empty)
+            Ok(RawQueryResult::Json(JsonResult {
+                value: serde_json::Value::Null,
+                schema: resp.data.rowtype.into_iter().map(Into::into).collect(),
+            }))
         } else if let Some(value) = resp.data.rowset {
             log::debug!("Got JSON response");
             // NOTE: json response could be chunked too. however, go clients should receive arrow by-default,
